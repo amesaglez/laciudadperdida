@@ -1,0 +1,1090 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>La Ciudad Perdida — Escape Room de Matemáticas</title>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700;900&family=Crimson+Text:ital,wght@0,400;0,600;1,400&family=Special+Elite&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --gold:    #C9A84C;
+    --gold2:   #E8C97A;
+    --dark:    #0D0A06;
+    --dark2:   #1A1208;
+    --dark3:   #251A0A;
+    --stone:   #3D2E1A;
+    --stone2:  #5C4425;
+    --parch:   #F2E8C9;
+    --parch2:  #E8D8A0;
+    --ink:     #2A1F0D;
+    --teal:    #1D7A6E;
+    --teal2:   #2AA898;
+    --coral:   #A33D2A;
+    --green:   #2A5C35;
+    --green2:  #3D8A4A;
+    --purple:  #4A2A6E;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Crimson Text', serif;
+    background: var(--dark);
+    color: var(--parch);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* ── PANTALLAS ─────────────────────────────────────── */
+  .screen {
+    display: none;
+    min-height: 100vh;
+    width: 100%;
+    position: relative;
+  }
+  .screen.active { display: flex; flex-direction: column; align-items: center; justify-content: center; }
+
+  /* ── FONDO con patrón de piedra ─────────────────────── */
+  .bg-stone {
+    background-color: var(--dark2);
+    background-image:
+      repeating-linear-gradient(0deg, transparent, transparent 40px, rgba(255,255,255,.015) 40px, rgba(255,255,255,.015) 41px),
+      repeating-linear-gradient(90deg, transparent, transparent 40px, rgba(255,255,255,.015) 40px, rgba(255,255,255,.015) 41px);
+  }
+  .bg-temple  { background: radial-gradient(ellipse at center, #1C1005 0%, #0D0A06 100%); }
+  .bg-urns    { background: radial-gradient(ellipse at center, #0A0D10 0%, #060810 100%); }
+  .bg-maps    { background: radial-gradient(ellipse at center, #080D0A 0%, #050A07 100%); }
+  .bg-chamber { background: radial-gradient(ellipse at center, #120A00 0%, #0D0A06 100%); }
+  .bg-final   { background: radial-gradient(ellipse at 50% 30%, #1A1000 0%, #0D0A06 100%); }
+
+  /* ── BARRA SUPERIOR ─────────────────────────────────── */
+  .topbar {
+    position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 10px 24px;
+    background: linear-gradient(180deg, rgba(13,10,6,0.97) 0%, transparent 100%);
+    pointer-events: none;
+  }
+  .topbar-logo {
+    font-family: 'Cinzel', serif;
+    font-size: 13px; letter-spacing: 3px;
+    color: var(--gold); opacity: .8;
+  }
+  .progress-bar {
+    display: flex; gap: 8px; align-items: center;
+  }
+  .prog-dot {
+    width: 10px; height: 10px; border-radius: 50%;
+    border: 1.5px solid var(--stone2);
+    background: transparent;
+    transition: all .4s;
+  }
+  .prog-dot.done { background: var(--gold); border-color: var(--gold); }
+  .prog-dot.active { border-color: var(--gold2); box-shadow: 0 0 8px var(--gold2); }
+  .timer-display {
+    font-family: 'Special Elite', monospace;
+    font-size: 14px; color: var(--gold2);
+    letter-spacing: 2px; pointer-events: none;
+  }
+  .timer-display.urgent { color: #E85A3A; animation: pulse-red .6s infinite alternate; }
+  @keyframes pulse-red { from { opacity: 1; } to { opacity: .5; } }
+
+  /* ── TÍTULO PRINCIPAL ───────────────────────────────── */
+  .main-title {
+    font-family: 'Cinzel', serif;
+    font-size: clamp(2.4rem, 6vw, 5rem);
+    font-weight: 900;
+    color: var(--gold);
+    text-align: center;
+    letter-spacing: 4px;
+    line-height: 1.1;
+    text-shadow: 0 0 60px rgba(201,168,76,.3), 0 2px 0 rgba(0,0,0,.8);
+    animation: fade-in-up .8s ease both;
+  }
+  .subtitle {
+    font-family: 'Cinzel', serif;
+    font-size: clamp(.8rem, 1.8vw, 1.1rem);
+    color: var(--gold2); opacity: .7;
+    letter-spacing: 5px; text-align: center;
+    margin-top: 10px;
+    animation: fade-in-up .8s .2s ease both;
+  }
+  .sala-label {
+    font-family: 'Cinzel', serif;
+    font-size: .7rem; letter-spacing: 4px;
+    color: var(--gold2); opacity: .6;
+    text-transform: uppercase; text-align: center;
+    margin-bottom: 8px;
+  }
+  .sala-title {
+    font-family: 'Cinzel', serif;
+    font-size: clamp(1.6rem, 4vw, 2.8rem);
+    font-weight: 700; color: var(--gold);
+    text-align: center; letter-spacing: 2px;
+    text-shadow: 0 0 30px rgba(201,168,76,.25);
+    animation: fade-in-up .6s ease both;
+  }
+
+  /* ── PERGAMINO ──────────────────────────────────────── */
+  .scroll {
+    background: var(--parch2);
+    color: var(--ink);
+    border-radius: 4px;
+    padding: 28px 32px;
+    max-width: 680px; width: 90%;
+    position: relative;
+    box-shadow: 0 8px 40px rgba(0,0,0,.6), inset 0 0 30px rgba(0,0,0,.08);
+    animation: fade-in-up .7s .1s ease both;
+  }
+  .scroll::before, .scroll::after {
+    content: '';
+    position: absolute; left: 0; right: 0; height: 18px;
+    background: var(--parch);
+    border-radius: 50%;
+  }
+  .scroll::before { top: -6px; box-shadow: 0 -2px 8px rgba(0,0,0,.3); }
+  .scroll::after  { bottom: -6px; box-shadow: 0 2px 8px rgba(0,0,0,.3); }
+  .scroll-title {
+    font-family: 'Cinzel', serif;
+    font-size: 1rem; font-weight: 600;
+    color: var(--stone); letter-spacing: 2px;
+    text-align: center; margin-bottom: 12px;
+    border-bottom: 1px solid rgba(61,46,26,.3); padding-bottom: 10px;
+  }
+  .scroll p {
+    font-size: 1.15rem; line-height: 1.75;
+    color: var(--ink);
+  }
+  .scroll strong { color: var(--stone); font-weight: 600; }
+
+  /* ── CANDADO ────────────────────────────────────────── */
+  .lock-container {
+    display: flex; flex-direction: column; align-items: center; gap: 16px;
+    animation: fade-in-up .7s .2s ease both;
+  }
+  .lock-icon {
+    font-size: 2.8rem; line-height: 1;
+    color: var(--stone2);
+    transition: all .4s;
+  }
+  .lock-icon.unlocked { color: var(--gold); transform: translateY(-4px); }
+  .lock-inputs {
+    display: flex; gap: 10px; align-items: center;
+  }
+  .lock-digit {
+    width: 56px; height: 72px;
+    background: var(--dark3);
+    border: 2px solid var(--stone);
+    border-radius: 6px;
+    font-family: 'Special Elite', monospace;
+    font-size: 2rem; color: var(--gold2);
+    text-align: center;
+    caret-color: var(--gold);
+    outline: none;
+    transition: border-color .2s, box-shadow .2s;
+  }
+  .lock-digit:focus { border-color: var(--gold); box-shadow: 0 0 12px rgba(201,168,76,.3); }
+  .lock-digit.correct { border-color: var(--green2); color: var(--green2); }
+  .lock-digit.wrong   { border-color: var(--coral); color: var(--coral); animation: shake .3s ease; }
+  .lock-sep {
+    font-family: 'Cinzel', serif;
+    font-size: 1.4rem; color: var(--stone2);
+  }
+  .lock-feedback {
+    font-family: 'Cinzel', serif;
+    font-size: .85rem; letter-spacing: 2px;
+    min-height: 22px; text-align: center;
+    transition: all .3s;
+  }
+  .lock-feedback.ok  { color: var(--green2); }
+  .lock-feedback.err { color: var(--coral); }
+
+  /* ── BOTONES ────────────────────────────────────────── */
+  .btn {
+    font-family: 'Cinzel', serif;
+    font-size: .9rem; font-weight: 600;
+    letter-spacing: 3px;
+    padding: 14px 36px;
+    border: 2px solid var(--gold);
+    background: transparent;
+    color: var(--gold);
+    cursor: pointer;
+    transition: all .25s;
+    position: relative; overflow: hidden;
+  }
+  .btn::before {
+    content: '';
+    position: absolute; inset: 0;
+    background: var(--gold);
+    transform: scaleX(0); transform-origin: left;
+    transition: transform .25s;
+    z-index: 0;
+  }
+  .btn:hover::before { transform: scaleX(1); }
+  .btn:hover { color: var(--dark); }
+  .btn span { position: relative; z-index: 1; }
+  .btn-sm {
+    font-family: 'Cinzel', serif;
+    font-size: .75rem; font-weight: 600;
+    letter-spacing: 2px; padding: 9px 22px;
+    border: 1.5px solid var(--stone2);
+    background: transparent; color: var(--stone2);
+    cursor: pointer; transition: all .2s;
+  }
+  .btn-sm:hover { border-color: var(--gold2); color: var(--gold2); }
+  .btn-check {
+    font-family: 'Cinzel', serif;
+    font-size: .8rem; font-weight: 600; letter-spacing: 2px;
+    padding: 11px 28px;
+    border: 1.5px solid var(--gold);
+    background: rgba(201,168,76,.1); color: var(--gold);
+    cursor: pointer; transition: all .2s; border-radius: 3px;
+  }
+  .btn-check:hover { background: rgba(201,168,76,.2); }
+  .btn-check:active { transform: scale(.97); }
+
+  /* ── DIVISOR ────────────────────────────────────────── */
+  .divider {
+    display: flex; align-items: center; gap: 14px;
+    width: 90%; max-width: 500px; margin: 6px 0;
+  }
+  .divider-line { flex: 1; height: 1px; background: var(--stone); }
+  .divider-gem  { color: var(--gold); font-size: 1rem; }
+
+  /* ── TARJETA DE PISTA ───────────────────────────────── */
+  .hint-box {
+    background: rgba(201,168,76,.07);
+    border: 1px solid rgba(201,168,76,.2);
+    border-radius: 4px;
+    padding: 14px 20px; max-width: 640px; width: 88%;
+    animation: fade-in-up .7s .3s ease both;
+  }
+  .hint-title {
+    font-family: 'Cinzel', serif;
+    font-size: .7rem; letter-spacing: 3px;
+    color: var(--gold2); opacity: .7; margin-bottom: 6px;
+  }
+  .hint-box p {
+    font-size: 1.05rem; line-height: 1.6; color: rgba(242,232,201,.75);
+  }
+
+  /* ── CLAVES OBTENIDAS ───────────────────────────────── */
+  .keys-panel {
+    display: flex; gap: 10px; flex-wrap: wrap; justify-content: center;
+    animation: fade-in-up .7s .4s ease both;
+  }
+  .key-chip {
+    font-family: 'Special Elite', monospace;
+    font-size: 1rem; padding: 8px 18px;
+    border: 1.5px solid var(--stone);
+    border-radius: 3px; color: var(--stone2);
+    background: var(--dark3); letter-spacing: 2px;
+    transition: all .4s;
+  }
+  .key-chip.revealed {
+    border-color: var(--gold);
+    color: var(--gold2);
+    box-shadow: 0 0 12px rgba(201,168,76,.2);
+  }
+  .key-label {
+    font-family: 'Cinzel', serif;
+    font-size: .6rem; letter-spacing: 3px;
+    color: var(--stone2); display: block; margin-bottom: 3px;
+  }
+
+  /* ── LAYOUT ─────────────────────────────────────────── */
+  .content-col {
+    display: flex; flex-direction: column;
+    align-items: center; gap: 22px;
+    width: 100%; padding: 100px 20px 40px;
+  }
+  .two-col {
+    display: grid; grid-template-columns: 1fr 1fr;
+    gap: 20px; max-width: 780px; width: 90%;
+  }
+  @media (max-width: 640px) { .two-col { grid-template-columns: 1fr; } }
+
+  /* ── ILUSTRACIONES DECORATIVAS SVG ──────────────────── */
+  .deco { opacity: .15; pointer-events: none; }
+  .deco-corner {
+    position: absolute; opacity: .12;
+    pointer-events: none;
+  }
+
+  /* ── ANIMACIONES ────────────────────────────────────── */
+  @keyframes fade-in-up {
+    from { opacity: 0; transform: translateY(20px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  @keyframes shake {
+    0%,100% { transform: translateX(0); }
+    20%     { transform: translateX(-8px); }
+    40%     { transform: translateX(8px); }
+    60%     { transform: translateX(-6px); }
+    80%     { transform: translateX(6px); }
+  }
+  @keyframes glow-pulse {
+    from { box-shadow: 0 0 20px rgba(201,168,76,.2); }
+    to   { box-shadow: 0 0 40px rgba(201,168,76,.5); }
+  }
+  @keyframes float {
+    0%,100% { transform: translateY(0); }
+    50%     { transform: translateY(-8px); }
+  }
+  @keyframes confetti-fall {
+    0%   { transform: translateY(-20px) rotate(0deg); opacity: 1; }
+    100% { transform: translateY(110vh) rotate(720deg); opacity: 0; }
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .float-anim { animation: float 3s ease-in-out infinite; }
+  .glow-anim  { animation: glow-pulse 2s ease-in-out infinite alternate; }
+
+  /* ── ANTORCHA ───────────────────────────────────────── */
+  .torch {
+    position: absolute; top: 80px;
+    font-size: 2.2rem;
+    animation: float 2.5s ease-in-out infinite;
+    opacity: .6; pointer-events: none;
+  }
+  .torch-l { left: 32px; animation-delay: 0s; }
+  .torch-r { right: 32px; animation-delay: .8s; }
+
+  /* ── OVERLAY DE AYUDA ───────────────────────────────── */
+  .help-overlay {
+    display: none;
+    position: fixed; inset: 0; z-index: 200;
+    background: rgba(0,0,0,.82);
+    align-items: center; justify-content: center;
+  }
+  .help-overlay.show { display: flex; }
+  .help-card {
+    background: var(--dark3);
+    border: 1px solid var(--stone2);
+    border-radius: 6px; padding: 32px 36px;
+    max-width: 540px; width: 90%;
+    position: relative;
+  }
+  .help-card h3 {
+    font-family: 'Cinzel', serif;
+    font-size: 1.1rem; color: var(--gold);
+    letter-spacing: 2px; margin-bottom: 20px;
+    text-align: center;
+  }
+  .help-step {
+    display: flex; gap: 14px; align-items: flex-start;
+    margin-bottom: 14px;
+  }
+  .help-num {
+    width: 28px; height: 28px; border-radius: 50%;
+    background: var(--stone2); flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'Cinzel', serif; font-size: .8rem;
+    color: var(--gold2);
+  }
+  .help-step p { font-size: 1rem; line-height: 1.6; color: var(--parch); opacity: .9; }
+  .help-close {
+    position: absolute; top: 12px; right: 16px;
+    background: none; border: none; color: var(--stone2);
+    font-size: 1.4rem; cursor: pointer;
+    transition: color .2s;
+  }
+  .help-close:hover { color: var(--gold); }
+  .help-btn {
+    position: fixed; bottom: 24px; right: 24px;
+    z-index: 150;
+    background: var(--dark3); border: 1.5px solid var(--stone2);
+    border-radius: 50%; width: 44px; height: 44px;
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer; font-size: 1.2rem;
+    transition: all .2s; color: var(--stone2);
+  }
+  .help-btn:hover { border-color: var(--gold2); color: var(--gold2); }
+  .help-btn.hidden { display: none; }
+
+  /* ── CONFETI ────────────────────────────────────────── */
+  .confetti-piece {
+    position: fixed; top: -20px; z-index: 300;
+    width: 10px; height: 10px; border-radius: 2px;
+    animation: confetti-fall linear forwards;
+    pointer-events: none;
+  }
+
+  /* ── PANTALLA FINAL ─────────────────────────────────── */
+  .trophy { font-size: 5rem; animation: float 3s ease-in-out infinite; }
+  .final-keys {
+    display: grid; grid-template-columns: repeat(4,1fr);
+    gap: 12px; max-width: 500px; width: 90%;
+    margin-top: 8px;
+  }
+  @media(max-width:500px){ .final-keys{ grid-template-columns: repeat(2,1fr); } }
+  .final-key {
+    background: var(--dark3); border: 1.5px solid var(--gold);
+    border-radius: 4px; padding: 12px 8px; text-align: center;
+  }
+  .final-key .room { font-family:'Cinzel',serif; font-size:.6rem; letter-spacing:2px; color:var(--gold2); opacity:.7; }
+  .final-key .val  { font-family:'Special Elite',monospace; font-size:1.4rem; color:var(--gold2); margin-top:4px; }
+
+  /* ── PANTALLA SOLUCIONES ────────────────────────────── */
+  .sol-card {
+    background: var(--dark3); border: 1px solid var(--stone);
+    border-radius: 6px; padding: 22px 26px;
+    max-width: 700px; width: 90%;
+    animation: fade-in-up .5s ease both;
+  }
+  .sol-card + .sol-card { margin-top: 14px; }
+  .sol-sala {
+    font-family: 'Cinzel', serif; font-size: .7rem;
+    letter-spacing: 3px; color: var(--gold2); opacity: .7; margin-bottom: 6px;
+  }
+  .sol-title { font-family:'Cinzel',serif; font-size:1.1rem; color:var(--gold); margin-bottom:14px; }
+  .sol-step {
+    display:flex; gap:10px; align-items:flex-start; margin-bottom:10px;
+  }
+  .sol-n {
+    width:22px; height:22px; border-radius:50%; flex-shrink:0;
+    background:var(--stone2); display:flex; align-items:center; justify-content:center;
+    font-family:'Cinzel',serif; font-size:.65rem; color:var(--gold2);
+  }
+  .sol-step p { font-size:1rem; line-height:1.6; color:rgba(242,232,201,.85); }
+  .sol-eq {
+    font-family:'Special Elite',monospace; font-size:1rem;
+    background:rgba(201,168,76,.08); border-left:2px solid var(--gold);
+    padding:8px 14px; margin:8px 0; color:var(--gold2);
+    letter-spacing:1px;
+  }
+  .sol-answer {
+    margin-top:10px; padding:10px 16px;
+    background:rgba(42,168,152,.1); border:1px solid rgba(42,168,152,.3);
+    border-radius:3px; font-family:'Cinzel',serif;
+    font-size:.85rem; color:var(--teal2); letter-spacing:1px;
+  }
+
+  /* ── SCROLLBAR ──────────────────────────────────────── */
+  ::-webkit-scrollbar { width: 6px; }
+  ::-webkit-scrollbar-track { background: var(--dark); }
+  ::-webkit-scrollbar-thumb { background: var(--stone); border-radius: 3px; }
+
+  /* ── PARTICLES ──────────────────────────────────────── */
+  .particle {
+    position:fixed; border-radius:50%;
+    pointer-events:none; z-index:0;
+    animation: float-particle linear infinite;
+    opacity:.25;
+  }
+  @keyframes float-particle {
+    0%   { transform: translateY(100vh) translateX(0); opacity:0; }
+    10%  { opacity:.25; }
+    90%  { opacity:.15; }
+    100% { transform: translateY(-100px) translateX(40px); opacity:0; }
+  }
+</style>
+</head>
+<body>
+
+<!-- PARTÍCULAS AMBIENTALES -->
+<div id="particles"></div>
+
+<!-- BARRA SUPERIOR -->
+<div class="topbar" id="topbar" style="display:none">
+  <div class="topbar-logo">LA CIUDAD PERDIDA</div>
+  <div class="progress-bar" id="progress">
+    <div class="prog-dot" id="pd1"></div>
+    <div class="prog-dot" id="pd2"></div>
+    <div class="prog-dot" id="pd3"></div>
+    <div class="prog-dot" id="pd4"></div>
+  </div>
+  <div class="timer-display" id="timer">30:00</div>
+</div>
+
+<!-- BOTÓN AYUDA -->
+<button class="help-btn hidden" id="helpBtn" onclick="showHelp()" title="Ayuda: cómo plantear sistemas">?</button>
+
+<!-- OVERLAY AYUDA -->
+<div class="help-overlay" id="helpOverlay">
+  <div class="help-card">
+    <button class="help-close" onclick="hideHelp()">✕</button>
+    <h3>Cómo plantear un sistema</h3>
+    <div class="help-step"><div class="help-num">1</div><p>Nombra las dos incógnitas: <strong>¿qué dos cosas desconozco?</strong> Llámalas x e y.</p></div>
+    <div class="help-step"><div class="help-num">2</div><p>Traduce cada condición del enunciado a una ecuación. Una condición → una ecuación.</p></div>
+    <div class="help-step"><div class="help-num">3</div><p>Representa las dos ecuaciones en GeoGebra. El punto de intersección es la solución.</p></div>
+    <div class="help-step"><div class="help-num">4</div><p>Verifica: sustituye x e y en las dos ecuaciones y comprueba que se cumple. Lee qué pide el problema.</p></div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════
+     PANTALLA 0 — PORTADA
+═══════════════════════════════════════════════════════ -->
+<div id="s0" class="screen active bg-stone" style="justify-content:center;align-items:center;min-height:100vh;">
+  <div class="torch torch-l">🔦</div>
+  <div class="torch torch-r">🔦</div>
+
+  <!-- SVG decorativo: ruinas -->
+  <svg class="deco-corner" style="bottom:0;left:0;width:280px;height:200px" viewBox="0 0 280 200" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <rect x="20" y="120" width="30" height="80" fill="#C9A84C" opacity=".4"/>
+    <rect x="60" y="90" width="30" height="110" fill="#C9A84C" opacity=".4"/>
+    <rect x="100" y="110" width="20" height="90" fill="#C9A84C" opacity=".3"/>
+    <rect x="140" y="140" width="25" height="60" fill="#C9A84C" opacity=".2"/>
+    <rect x="10" y="190" width="260" height="10" fill="#C9A84C" opacity=".3"/>
+  </svg>
+  <svg class="deco-corner" style="bottom:0;right:0;width:280px;height:200px;transform:scaleX(-1)" viewBox="0 0 280 200" fill="none">
+    <rect x="20" y="120" width="30" height="80" fill="#C9A84C" opacity=".4"/>
+    <rect x="60" y="90" width="30" height="110" fill="#C9A84C" opacity=".4"/>
+    <rect x="100" y="110" width="20" height="90" fill="#C9A84C" opacity=".3"/>
+    <rect x="140" y="140" width="25" height="60" fill="#C9A84C" opacity=".2"/>
+    <rect x="10" y="190" width="260" height="10" fill="#C9A84C" opacity=".3"/>
+  </svg>
+
+  <div class="content-col" style="padding-top:60px;gap:18px">
+    <!-- Rosa de los vientos decorativa -->
+    <svg style="width:70px;height:70px;opacity:.35;animation:spin 30s linear infinite" viewBox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <polygon points="40,4 44,36 40,40 36,36" fill="#C9A84C"/>
+      <polygon points="40,76 44,44 40,40 36,44" fill="#C9A84C" opacity=".6"/>
+      <polygon points="4,40 36,36 40,40 36,44" fill="#C9A84C" opacity=".6"/>
+      <polygon points="76,40 44,36 40,40 44,44" fill="#C9A84C"/>
+      <circle cx="40" cy="40" r="5" fill="#C9A84C"/>
+      <circle cx="40" cy="40" r="12" stroke="#C9A84C" stroke-width="1" fill="none"/>
+    </svg>
+
+    <div class="main-title">La Ciudad<br>Perdida</div>
+    <div class="subtitle">ESCAPE ROOM · MATEMÁTICAS · 2º ESO</div>
+
+    <div class="divider"><div class="divider-line"></div><div class="divider-gem">◆</div><div class="divider-line"></div></div>
+
+    <div style="max-width:480px;text-align:center;font-size:1.1rem;line-height:1.8;color:rgba(242,232,201,.7);animation:fade-in-up .8s .4s ease both;padding:0 20px">
+      Una expedición arqueológica acaba de descubrir el emplazamiento de una civilización olvidada.
+      Solo un matemático puede descifrar los códigos que protegen la cámara del tesoro.
+      <br><br>
+      <em style="color:var(--gold2);opacity:.9">¿Eres capaz de resolver los cuatro retos y encontrar el tesoro?</em>
+    </div>
+
+    <div style="animation:fade-in-up .8s .6s ease both;margin-top:8px">
+      <button class="btn" onclick="startGame()"><span>⬡ INICIAR MISIÓN ⬡</span></button>
+    </div>
+
+    <div style="font-family:'Cinzel',serif;font-size:.65rem;letter-spacing:3px;color:var(--stone2);margin-top:4px;animation:fade-in-up .8s .8s ease both">
+      4 SALAS · 4 CANDADOS · 30 MINUTOS
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════
+     PANTALLA 1 — SALA 1: LA PUERTA DEL TEMPLO
+═══════════════════════════════════════════════════════ -->
+<div id="s1" class="screen bg-temple">
+  <div class="torch torch-l">🕯️</div>
+  <div class="torch torch-r">🕯️</div>
+  <div class="content-col">
+    <div class="sala-label">SALA 1 DE 4</div>
+    <div class="sala-title">🗝️ La Puerta del Templo</div>
+
+    <div class="scroll">
+      <div class="scroll-title">◆ MENSAJE CIFRADO ◆</div>
+      <p>
+        Al llegar al templo, la enorme puerta de piedra está bloqueada por un mecanismo de dos números secretos.
+        Una inscripción en la roca dice:
+        <br><br>
+        <strong>«La suma de los dos números secretos es 15. La diferencia entre el mayor y el menor es 3.»</strong>
+        <br><br>
+        Para abrir la puerta, introduce el <strong>número mayor</strong> de los dos.
+      </p>
+    </div>
+
+    <div class="hint-box">
+      <div class="hint-title">⚙ PISTA DEL ARQUEÓLOGO</div>
+      <p>
+        Llama <em>x</em> al número mayor e <em>y</em> al menor. Escribe dos ecuaciones: una con la suma y otra con la diferencia. Represéntalas en GeoGebra. El punto de intersección te da la solución.
+      </p>
+    </div>
+
+    <div class="lock-container">
+      <div class="lock-icon" id="lock1">🔒</div>
+      <div style="font-family:'Cinzel',serif;font-size:.7rem;letter-spacing:3px;color:var(--stone2)">INTRODUCE EL NÚMERO MAYOR</div>
+      <div class="lock-inputs">
+        <input class="lock-digit" id="l1d1" type="text" maxlength="1" inputmode="numeric" pattern="[0-9]" placeholder="·" autocomplete="off" onkeydown="handleKey(event,'l1d1','l1d1',1)">
+      </div>
+      <div style="display:flex;gap:10px">
+        <button class="btn-check" onclick="checkLock(1)"><span>COMPROBAR</span></button>
+      </div>
+      <div class="lock-feedback" id="fb1"></div>
+      <button class="btn" id="next1" style="display:none" onclick="goTo(2)"><span>AVANZAR A LA SALA 2 →</span></button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════
+     PANTALLA 2 — SALA 2: LA SALA DE LAS URNAS
+═══════════════════════════════════════════════════════ -->
+<div id="s2" class="screen bg-urns">
+  <div class="torch torch-l">🕯️</div>
+  <div class="torch torch-r">🕯️</div>
+  <div class="content-col">
+    <div class="sala-label">SALA 2 DE 4</div>
+    <div class="sala-title">🏺 La Sala de las Urnas</div>
+
+    <div class="scroll">
+      <div class="scroll-title">◆ PAPIRO ANTIGUO ◆</div>
+      <p>
+        La sala está llena de urnas de dos tamaños. Un papiro informa del inventario:
+        <br><br>
+        <strong>«En la sala hay 9 urnas en total. Las urnas grandes valen 12 monedas cada una y las pequeñas 7 monedas. El valor total de todas las urnas es 88 monedas.»</strong>
+        <br><br>
+        Para continuar, introduce el número de <strong>urnas grandes</strong>.
+      </p>
+    </div>
+
+    <div class="hint-box">
+      <div class="hint-title">⚙ PISTA DEL ARQUEÓLOGO</div>
+      <p>
+        Llama <em>x</em> al número de urnas grandes e <em>y</em> al de pequeñas. Una ecuación con el total de urnas, otra con el valor total. Resuelve el sistema gráficamente.
+      </p>
+    </div>
+
+    <div class="lock-container">
+      <div class="lock-icon" id="lock2">🔒</div>
+      <div style="font-family:'Cinzel',serif;font-size:.7rem;letter-spacing:3px;color:var(--stone2)">NÚMERO DE URNAS GRANDES</div>
+      <div class="lock-inputs">
+        <input class="lock-digit" id="l2d1" type="text" maxlength="1" inputmode="numeric" pattern="[0-9]" placeholder="·" autocomplete="off" onkeydown="handleKey(event,'l2d1','l2d1',2)">
+      </div>
+      <div style="display:flex;gap:10px">
+        <button class="btn-check" onclick="checkLock(2)">COMPROBAR</button>
+      </div>
+      <div class="lock-feedback" id="fb2"></div>
+      <button class="btn" id="next2" style="display:none" onclick="goTo(3)"><span>AVANZAR A LA SALA 3 →</span></button>
+    </div>
+
+    <div class="keys-panel">
+      <div class="key-chip revealed" id="k1"><span class="key-label">SALA 1</span>9</div>
+      <div class="key-chip" id="k2"><span class="key-label">SALA 2</span>?</div>
+      <div class="key-chip" id="k3"><span class="key-label">SALA 3</span>?</div>
+      <div class="key-chip" id="k4"><span class="key-label">SALA 4</span>?</div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════
+     PANTALLA 3 — SALA 3: LA SALA DE LOS MAPAS
+═══════════════════════════════════════════════════════ -->
+<div id="s3" class="screen bg-maps">
+  <div class="torch torch-l">🕯️</div>
+  <div class="torch torch-r">🕯️</div>
+  <div class="content-col">
+    <div class="sala-label">SALA 3 DE 4</div>
+    <div class="sala-title">🧭 La Sala de los Mapas</div>
+
+    <div class="scroll">
+      <div class="scroll-title">◆ MAPA DESPLEGADO ◆</div>
+      <p>
+        Sobre la mesa de cartografía hay un mapa con dos rutas marcadas hasta el tesoro:
+        <br><br>
+        <strong>«El camino A mide el doble que el camino B. Juntos, los dos caminos suman 48 kilómetros.»</strong>
+        <br><br>
+        Para desbloquear la siguiente sala, introduce la longitud del <strong>camino A</strong> en kilómetros.
+      </p>
+    </div>
+
+    <div class="hint-box">
+      <div class="hint-title">⚙ PISTA DEL ARQUEÓLOGO</div>
+      <p>
+        Llama <em>x</em> al camino A e <em>y</em> al camino B. «A mide el doble que B» es una ecuación. «Juntos suman 48» es otra. Dos ecuaciones → dos rectas → un punto de intersección.
+      </p>
+    </div>
+
+    <div class="lock-container">
+      <div class="lock-icon" id="lock3">🔒</div>
+      <div style="font-family:'Cinzel',serif;font-size:.7rem;letter-spacing:3px;color:var(--stone2)">LONGITUD DEL CAMINO A (KM)</div>
+      <div class="lock-inputs">
+        <input class="lock-digit" id="l3d1" type="text" maxlength="1" inputmode="numeric" pattern="[0-9]" placeholder="·" autocomplete="off" onkeydown="handleKey(event,'l3d1','l3d2',3)" style="width:56px">
+        <input class="lock-digit" id="l3d2" type="text" maxlength="1" inputmode="numeric" pattern="[0-9]" placeholder="·" autocomplete="off" onkeydown="handleKey(event,'l3d2','l3d2',3)" style="width:56px">
+      </div>
+      <div style="display:flex;gap:10px">
+        <button class="btn-check" onclick="checkLock(3)">COMPROBAR</button>
+      </div>
+      <div class="lock-feedback" id="fb3"></div>
+      <button class="btn" id="next3" style="display:none" onclick="goTo(4)"><span>AVANZAR A LA CÁMARA FINAL →</span></button>
+    </div>
+
+    <div class="keys-panel">
+      <div class="key-chip revealed" id="k1b"><span class="key-label">SALA 1</span>9</div>
+      <div class="key-chip revealed" id="k2b"><span class="key-label">SALA 2</span>5</div>
+      <div class="key-chip" id="k3b"><span class="key-label">SALA 3</span>?</div>
+      <div class="key-chip" id="k4b"><span class="key-label">SALA 4</span>?</div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════
+     PANTALLA 4 — SALA 4: LA CÁMARA DEL TESORO
+═══════════════════════════════════════════════════════ -->
+<div id="s4" class="screen bg-chamber">
+  <div class="torch torch-l" style="font-size:2.8rem">🔥</div>
+  <div class="torch torch-r" style="font-size:2.8rem">🔥</div>
+  <div class="content-col">
+    <div class="sala-label">RETO FINAL</div>
+    <div class="sala-title">💎 La Cámara del Tesoro</div>
+
+    <div class="scroll">
+      <div class="scroll-title">◆ GRABADO EN PIEDRA ◆</div>
+      <p>
+        El cofre del tesoro está protegido por un candado de doble dígito. Una placa de bronce dice:
+        <br><br>
+        <strong>«Las coordenadas del tesoro son dos números. Su suma es 13 y su diferencia (mayor menos menor) es 3. Las coordenadas son el número mayor y el número menor, en ese orden.»</strong>
+        <br><br>
+        Introduce las <strong>dos coordenadas</strong> para abrir el cofre.
+      </p>
+    </div>
+
+    <div class="hint-box">
+      <div class="hint-title">⚙ PISTA DEL ARQUEÓLOGO</div>
+      <p>
+        Sistema final: x + y = 13 / x − y = 3. Represéntalo en GeoGebra. El punto de intersección son las coordenadas del tesoro. Introduce primero el mayor.
+      </p>
+    </div>
+
+    <div class="lock-container">
+      <div class="lock-icon" id="lock4" style="font-size:3.5rem">🔐</div>
+      <div style="font-family:'Cinzel',serif;font-size:.7rem;letter-spacing:3px;color:var(--stone2)">COORDENADAS DEL TESORO</div>
+      <div class="lock-inputs">
+        <div style="display:flex;flex-direction:column;align-items:center;gap:4px">
+          <span style="font-family:'Cinzel',serif;font-size:.6rem;letter-spacing:2px;color:var(--stone2)">MAYOR</span>
+          <input class="lock-digit" id="l4d1" type="text" maxlength="1" inputmode="numeric" pattern="[0-9]" placeholder="·" autocomplete="off" onkeydown="handleKey(event,'l4d1','l4d2',4)">
+        </div>
+        <div class="lock-sep">·</div>
+        <div style="display:flex;flex-direction:column;align-items:center;gap:4px">
+          <span style="font-family:'Cinzel',serif;font-size:.6rem;letter-spacing:2px;color:var(--stone2)">MENOR</span>
+          <input class="lock-digit" id="l4d2" type="text" maxlength="1" inputmode="numeric" pattern="[0-9]" placeholder="·" autocomplete="off" onkeydown="handleKey(event,'l4d2','l4d2',4)">
+        </div>
+      </div>
+      <div style="display:flex;gap:10px">
+        <button class="btn-check" onclick="checkLock(4)">ABRIR EL COFRE</button>
+      </div>
+      <div class="lock-feedback" id="fb4"></div>
+    </div>
+
+    <div class="keys-panel">
+      <div class="key-chip revealed"><span class="key-label">SALA 1</span>9</div>
+      <div class="key-chip revealed"><span class="key-label">SALA 2</span>5</div>
+      <div class="key-chip revealed"><span class="key-label">SALA 3</span>32</div>
+      <div class="key-chip" id="k4c"><span class="key-label">SALA 4</span>?</div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════
+     PANTALLA 5 — FINAL: ¡EL TESORO!
+═══════════════════════════════════════════════════════ -->
+<div id="s5" class="screen bg-final">
+  <div class="content-col" style="gap:20px">
+    <div class="trophy">🏆</div>
+    <div class="main-title" style="font-size:clamp(2rem,5vw,3.8rem)">¡Misión<br>Completada!</div>
+    <div class="subtitle">LA CIUDAD PERDIDA HA SIDO DESCUBIERTA</div>
+
+    <div class="divider"><div class="divider-line"></div><div class="divider-gem">◆</div><div class="divider-line"></div></div>
+
+    <p style="text-align:center;font-size:1.15rem;line-height:1.8;color:rgba(242,232,201,.75);max-width:500px;padding:0 20px">
+      Has resuelto los cuatro sistemas de ecuaciones y descifrado las coordenadas del tesoro.
+      El cofre se abre ante tus ojos…
+    </p>
+
+    <div style="font-family:'Cinzel',serif;font-size:.75rem;letter-spacing:3px;color:var(--gold2);text-align:center">COORDENADAS DEL TESORO</div>
+    <div style="font-family:'Special Elite',monospace;font-size:3rem;color:var(--gold);letter-spacing:8px;text-shadow:0 0 30px rgba(201,168,76,.5)">( 8 , 5 )</div>
+
+    <div style="font-family:'Cinzel',serif;font-size:.7rem;letter-spacing:3px;color:var(--stone2);text-align:center;margin-top:4px">CLAVES OBTENIDAS DURANTE LA EXPEDICIÓN</div>
+    <div class="final-keys">
+      <div class="final-key"><div class="room">SALA 1</div><div class="val">9</div></div>
+      <div class="final-key"><div class="room">SALA 2</div><div class="val">5</div></div>
+      <div class="final-key"><div class="room">SALA 3</div><div class="val">32</div></div>
+      <div class="final-key"><div class="room">SALA 4</div><div class="val">8·5</div></div>
+    </div>
+
+    <div id="elapsed-display" style="font-family:'Cinzel',serif;font-size:.8rem;letter-spacing:2px;color:var(--gold2);opacity:.7"></div>
+
+    <div style="display:flex;gap:14px;flex-wrap:wrap;justify-content:center;margin-top:8px">
+      <button class="btn" onclick="goTo('solutions')"><span>VER SOLUCIONES →</span></button>
+      <button class="btn-sm" onclick="resetGame()">NUEVA PARTIDA</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════
+     PANTALLA 6 — SOLUCIONES
+═══════════════════════════════════════════════════════ -->
+<div id="s6" class="screen bg-stone" style="justify-content:flex-start;align-items:center;padding:90px 20px 60px">
+  <div style="font-family:'Cinzel',serif;font-size:.7rem;letter-spacing:4px;color:var(--gold2);opacity:.6;margin-bottom:8px;text-align:center">CUADERNO DEL ARQUEÓLOGO</div>
+  <div style="font-family:'Cinzel',serif;font-size:1.8rem;color:var(--gold);text-align:center;margin-bottom:28px">Resolución de los sistemas</div>
+
+  <div class="sol-card">
+    <div class="sol-sala">SALA 1</div>
+    <div class="sol-title">🗝️ La Puerta del Templo</div>
+    <div class="sol-step"><div class="sol-n">1</div><p>Incógnitas: <strong>x</strong> = número mayor, <strong>y</strong> = número menor</p></div>
+    <div class="sol-step"><div class="sol-n">2</div><p>Sistema de ecuaciones:</p></div>
+    <div class="sol-eq">x + y = 15 &nbsp;&nbsp;(la suma es 15)<br>x − y = 3 &nbsp;&nbsp;&nbsp;(la diferencia es 3)</div>
+    <div class="sol-step"><div class="sol-n">3</div><p>Resolución: sumando las dos ecuaciones → 2x = 18 → x = 9</p></div>
+    <div class="sol-step"><div class="sol-n">4</div><p>Sustituyendo: 9 + y = 15 → y = 6</p></div>
+    <div class="sol-step"><div class="sol-n">✓</div><p>Verificación: 9 + 6 = 15 ✓ &nbsp;·&nbsp; 9 − 6 = 3 ✓</p></div>
+    <div class="sol-answer">CLAVE: el número mayor es 9</div>
+  </div>
+
+  <div class="sol-card">
+    <div class="sol-sala">SALA 2</div>
+    <div class="sol-title">🏺 La Sala de las Urnas</div>
+    <div class="sol-step"><div class="sol-n">1</div><p>Incógnitas: <strong>x</strong> = urnas grandes, <strong>y</strong> = urnas pequeñas</p></div>
+    <div class="sol-step"><div class="sol-n">2</div><p>Sistema de ecuaciones:</p></div>
+    <div class="sol-eq">x + y = 9 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(total de urnas)<br>12x + 7y = 88 &nbsp;(valor total)</div>
+    <div class="sol-step"><div class="sol-n">3</div><p>De la primera: y = 9 − x. Sustituimos: 12x + 7(9−x) = 88 → 5x = 25 → x = 5</p></div>
+    <div class="sol-step"><div class="sol-n">4</div><p>Sustituyendo: y = 9 − 5 = 4</p></div>
+    <div class="sol-step"><div class="sol-n">✓</div><p>Verificación: 5 + 4 = 9 ✓ &nbsp;·&nbsp; 12(5) + 7(4) = 60 + 28 = 88 ✓</p></div>
+    <div class="sol-answer">CLAVE: hay 5 urnas grandes</div>
+  </div>
+
+  <div class="sol-card">
+    <div class="sol-sala">SALA 3</div>
+    <div class="sol-title">🧭 La Sala de los Mapas</div>
+    <div class="sol-step"><div class="sol-n">1</div><p>Incógnitas: <strong>x</strong> = camino A, <strong>y</strong> = camino B (en km)</p></div>
+    <div class="sol-step"><div class="sol-n">2</div><p>Sistema de ecuaciones:</p></div>
+    <div class="sol-eq">x = 2y &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(A mide el doble que B)<br>x + y = 48 &nbsp;(juntos suman 48 km)</div>
+    <div class="sol-step"><div class="sol-n">3</div><p>Sustituyendo x = 2y en la segunda: 2y + y = 48 → 3y = 48 → y = 16</p></div>
+    <div class="sol-step"><div class="sol-n">4</div><p>Camino A: x = 2 × 16 = 32 km</p></div>
+    <div class="sol-step"><div class="sol-n">✓</div><p>Verificación: 32 = 2 × 16 ✓ &nbsp;·&nbsp; 32 + 16 = 48 ✓</p></div>
+    <div class="sol-answer">CLAVE: el camino A mide 32 km</div>
+  </div>
+
+  <div class="sol-card">
+    <div class="sol-sala">SALA 4 — RETO FINAL</div>
+    <div class="sol-title">💎 La Cámara del Tesoro</div>
+    <div class="sol-step"><div class="sol-n">1</div><p>Incógnitas: <strong>x</strong> = coordenada mayor, <strong>y</strong> = coordenada menor</p></div>
+    <div class="sol-step"><div class="sol-n">2</div><p>Sistema de ecuaciones:</p></div>
+    <div class="sol-eq">x + y = 13 &nbsp;(la suma es 13)<br>x − y = 3 &nbsp;&nbsp;(la diferencia es 3)</div>
+    <div class="sol-step"><div class="sol-n">3</div><p>Sumando las dos ecuaciones: 2x = 16 → x = 8</p></div>
+    <div class="sol-step"><div class="sol-n">4</div><p>Sustituyendo: 8 + y = 13 → y = 5</p></div>
+    <div class="sol-step"><div class="sol-n">✓</div><p>Verificación: 8 + 5 = 13 ✓ &nbsp;·&nbsp; 8 − 5 = 3 ✓</p></div>
+    <div class="sol-answer">COORDENADAS DEL TESORO: (8, 5)</div>
+  </div>
+
+  <div style="margin-top:28px;display:flex;gap:14px;flex-wrap:wrap;justify-content:center">
+    <button class="btn" onclick="goTo(5)"><span>← VOLVER AL FINAL</span></button>
+    <button class="btn-sm" onclick="resetGame()">NUEVA PARTIDA</button>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════
+     JAVASCRIPT
+═══════════════════════════════════════════════════════ -->
+<script>
+// ── ESTADO ──────────────────────────────────────────────
+const ANSWERS = {
+  1: ['9'],
+  2: ['5'],
+  3: ['3','2'],
+  4: ['8','5'],
+};
+const TOTAL_TIME = 30 * 60;
+let timerSec = TOTAL_TIME, timerInterval = null, gameStarted = false, startTs = 0;
+let currentScreen = 0;
+
+// ── PARTÍCULAS ──────────────────────────────────────────
+function spawnParticles() {
+  const wrap = document.getElementById('particles');
+  const colors = ['#C9A84C','#2AA898','#E8C97A','#5C4425'];
+  for (let i = 0; i < 18; i++) {
+    const p = document.createElement('div');
+    p.className = 'particle';
+    const size = 2 + Math.random() * 4;
+    p.style.cssText = `
+      left:${Math.random()*100}%;
+      width:${size}px; height:${size}px;
+      background:${colors[Math.floor(Math.random()*colors.length)]};
+      animation-duration:${12+Math.random()*20}s;
+      animation-delay:${Math.random()*15}s;
+    `;
+    wrap.appendChild(p);
+  }
+}
+
+// ── NAVEGACIÓN ──────────────────────────────────────────
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  const target = typeof id === 'number' ? document.getElementById('s'+id)
+                                         : document.getElementById('s6');
+  if (target) { target.classList.add('active'); window.scrollTo(0,0); }
+  currentScreen = id;
+}
+
+function goTo(n) {
+  showScreen(n);
+  updateProgress(n);
+  const helpBtn = document.getElementById('helpBtn');
+  if (n >= 1 && n <= 4) {
+    helpBtn.classList.remove('hidden');
+  } else {
+    helpBtn.classList.add('hidden');
+  }
+  if (n === 'solutions' || n === 6) {
+    helpBtn.classList.add('hidden');
+    showScreen('solutions');
+  }
+}
+
+function updateProgress(n) {
+  [1,2,3,4].forEach(i => {
+    const d = document.getElementById('pd'+i);
+    if (!d) return;
+    d.className = 'prog-dot' + (i < n ? ' done' : i === n ? ' active' : '');
+  });
+}
+
+// ── INICIO ──────────────────────────────────────────────
+function startGame() {
+  gameStarted = true;
+  startTs = Date.now();
+  document.getElementById('topbar').style.display = 'flex';
+  startTimer();
+  goTo(1);
+}
+
+// ── TEMPORIZADOR ────────────────────────────────────────
+function startTimer() {
+  timerInterval = setInterval(() => {
+    timerSec--;
+    const m = Math.floor(timerSec / 60);
+    const s = timerSec % 60;
+    const el = document.getElementById('timer');
+    el.textContent = `${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+    if (timerSec <= 300) el.classList.add('urgent');
+    if (timerSec <= 0) {
+      clearInterval(timerInterval);
+      el.textContent = '00:00';
+    }
+  }, 1000);
+}
+
+function stopTimer() {
+  clearInterval(timerInterval);
+  const elapsed = Math.round((Date.now() - startTs) / 1000);
+  const m = Math.floor(elapsed / 60), s = elapsed % 60;
+  const el = document.getElementById('elapsed-display');
+  if (el) el.textContent = `Tiempo empleado: ${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+}
+
+// ── CANDADOS ────────────────────────────────────────────
+function handleKey(e, currentId, nextId, room) {
+  const input = document.getElementById(currentId);
+  if (e.key === 'Enter') { checkLock(room); return; }
+  if (e.key === 'Backspace') return;
+  const val = e.key;
+  if (!/[0-9]/.test(val)) { e.preventDefault(); return; }
+  setTimeout(() => {
+    if (input.value.length >= 1 && currentId !== nextId) {
+      document.getElementById(nextId).focus();
+    }
+  }, 50);
+}
+
+function getInputVal(ids) {
+  return ids.map(id => {
+    const el = document.getElementById(id);
+    return el ? el.value.trim() : '';
+  });
+}
+
+function checkLock(room) {
+  const inputMap = {
+    1: ['l1d1'],
+    2: ['l2d1'],
+    3: ['l3d1','l3d2'],
+    4: ['l4d1','l4d2'],
+  };
+  const ids = inputMap[room];
+  const vals = getInputVal(ids);
+  const correct = ANSWERS[room];
+  const fb = document.getElementById('fb'+room);
+  const lockEl = document.getElementById('lock'+room);
+
+  const isCorrect = vals.every((v,i) => v === correct[i]) && vals.every(v => v !== '');
+
+  if (isCorrect) {
+    ids.forEach(id => document.getElementById(id).classList.add('correct'));
+    lockEl.textContent = '🔓';
+    lockEl.classList.add('unlocked');
+    fb.textContent = '✓  CORRECTO — ¡Candado abierto!';
+    fb.className = 'lock-feedback ok';
+    if (room < 4) {
+      document.getElementById('next'+room).style.display = 'block';
+    } else {
+      stopTimer();
+      document.getElementById('k4c').textContent = '';
+      document.getElementById('k4c').innerHTML = '<span class="key-label">SALA 4</span>8·5';
+      document.getElementById('k4c').classList.add('revealed');
+      setTimeout(() => { spawnConfetti(); goTo(5); }, 1200);
+    }
+  } else {
+    ids.forEach(id => {
+      const el = document.getElementById(id);
+      el.classList.remove('wrong');
+      void el.offsetWidth;
+      el.classList.add('wrong');
+      setTimeout(() => el.classList.remove('wrong'), 500);
+    });
+    fb.textContent = '✗  Clave incorrecta — vuelve a intentarlo';
+    fb.className = 'lock-feedback err';
+  }
+}
+
+// ── AYUDA ────────────────────────────────────────────────
+function showHelp() { document.getElementById('helpOverlay').classList.add('show'); }
+function hideHelp() { document.getElementById('helpOverlay').classList.remove('show'); }
+document.getElementById('helpOverlay').addEventListener('click', function(e) {
+  if (e.target === this) hideHelp();
+});
+
+// ── CONFETI ──────────────────────────────────────────────
+function spawnConfetti() {
+  const colors = ['#C9A84C','#E8C97A','#2AA898','#5DCAA5','#F2E8C9','#D4537E'];
+  for (let i = 0; i < 80; i++) {
+    const c = document.createElement('div');
+    c.className = 'confetti-piece';
+    c.style.cssText = `
+      left:${Math.random()*100}vw;
+      background:${colors[Math.floor(Math.random()*colors.length)]};
+      width:${6+Math.random()*8}px; height:${6+Math.random()*8}px;
+      border-radius:${Math.random()>.5?'50%':'2px'};
+      animation-duration:${2+Math.random()*2.5}s;
+      animation-delay:${Math.random()*.8}s;
+    `;
+    document.body.appendChild(c);
+    setTimeout(() => c.remove(), 4000);
+  }
+}
+
+// ── RESET ─────────────────────────────────────────────────
+function resetGame() {
+  timerSec = TOTAL_TIME;
+  clearInterval(timerInterval);
+  document.getElementById('timer').textContent = '30:00';
+  document.getElementById('timer').classList.remove('urgent');
+  document.getElementById('topbar').style.display = 'none';
+  document.getElementById('helpBtn').classList.add('hidden');
+
+  [1,2,3,4].forEach(r => {
+    const fb = document.getElementById('fb'+r); if (fb) { fb.textContent=''; fb.className='lock-feedback'; }
+    const lock = document.getElementById('lock'+r);
+    if (lock) { lock.textContent = r===4?'🔐':'🔒'; lock.classList.remove('unlocked'); }
+    const next = document.getElementById('next'+r); if (next) next.style.display='none';
+  });
+
+  const allInputs = ['l1d1','l2d1','l3d1','l3d2','l4d1','l4d2'];
+  allInputs.forEach(id => {
+    const el = document.getElementById(id);
+    if (el) { el.value=''; el.classList.remove('correct','wrong'); }
+  });
+
+  gameStarted = false;
+  showScreen(0);
+}
+
+// ── INIT ──────────────────────────────────────────────────
+spawnParticles();
+showScreen(0);
+</script>
+</body>
+</html>
